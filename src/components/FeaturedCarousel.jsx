@@ -14,8 +14,11 @@ const GRADIENTS = [
 
 export default function FeaturedCarousel() {
   const [events, setEvents] = useState([]);
-  const [active, setActive] = useState(0);
-  const touchStartX = useRef(null);
+  const [stack, setStack] = useState([]);
+  const dragX = useRef(0);
+  const startX = useRef(null);
+  const [dragging, setDragging] = useState(false);
+  const [offset, setOffset] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -25,83 +28,71 @@ export default function FeaturedCarousel() {
         .eq("status", "live")
         .order("event_date", { ascending: true })
         .limit(6);
-      if (data?.length) setEvents(data);
+      if (data?.length) {
+        setEvents(data);
+        setStack(data.map((_, i) => i));
+      }
     }
     load();
   }, []);
 
   if (events.length === 0) return null;
 
-  function handleTouchStart(e) {
-    touchStartX.current = e.touches[0].clientX;
+  function onStart(x) {
+    startX.current = x;
+    setDragging(true);
   }
-
-  function handleTouchEnd(e) {
-    if (touchStartX.current === null) return;
-    const delta = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(delta) > 40) {
-      if (delta < 0 && active < events.length - 1) setActive(active + 1);
-      if (delta > 0 && active > 0) setActive(active - 1);
+  function onMove(x) {
+    if (startX.current === null) return;
+    setOffset(x - startX.current);
+  }
+  function onEnd() {
+    if (Math.abs(offset) > 80) {
+      setStack((s) => [...s.slice(1), s[0]]);
     }
-    touchStartX.current = null;
+    setOffset(0);
+    startX.current = null;
+    setDragging(false);
   }
 
   return (
     <div className="mb-10">
       <h2 className="text-[17px] font-medium mb-4 px-0">Featured drops</h2>
-      <div
-        className="relative flex items-center justify-center h-[220px]"
-        style={{ perspective: "1200px" }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {events.map((e, i) => {
-          const offset = i - active;
-          const isActive = offset === 0;
-          const abs = Math.abs(offset);
-          if (abs > 2) return null;
-
+      <div className="relative flex items-center justify-center h-[240px]">
+        {stack.slice(0, 4).map((idx, pos) => {
+          const e = events[idx];
+          const isTop = pos === 0;
+          const scale = 1 - pos * 0.05;
+          const yOff = pos * 10;
+          const rot = isTop ? offset / 15 : 0;
+          const x = isTop ? offset : 0;
           return (
-            <button
+            <div
               key={e.id}
-              onClick={() => setActive(i)}
-              className="absolute rounded-card overflow-hidden shadow-soft transition-all duration-500 ease-out"
+              onMouseDown={isTop ? (ev) => onStart(ev.clientX) : undefined}
+              onMouseMove={isTop && dragging ? (ev) => onMove(ev.clientX) : undefined}
+              onMouseUp={isTop ? onEnd : undefined}
+              onMouseLeave={isTop && dragging ? onEnd : undefined}
+              onTouchStart={isTop ? (ev) => onStart(ev.touches[0].clientX) : undefined}
+              onTouchMove={isTop ? (ev) => onMove(ev.touches[0].clientX) : undefined}
+              onTouchEnd={isTop ? onEnd : undefined}
+              className="absolute w-[220px] h-[220px] rounded-card overflow-hidden shadow-soft cursor-grab active:cursor-grabbing select-none"
               style={{
-                width: isActive ? "180px" : "150px",
-                height: isActive ? "220px" : "190px",
-                transform: `
-                  translateX(${offset * 92}px)
-                  translateZ(${isActive ? 0 : -80}px)
-                  rotateY(${offset * -28}deg)
-                  scale(${isActive ? 1 : 0.88})
-                `,
-                zIndex: 10 - abs,
-                opacity: abs > 2 ? 0 : 1 - abs * 0.18,
-                background: e.poster_url
-                  ? `url(${e.poster_url}) center/cover`
-                  : GRADIENTS[i % GRADIENTS.length],
+                transform: `translate(${x}px, ${yOff}px) rotate(${rot}deg) scale(${scale})`,
+                zIndex: 10 - pos,
+                background: e.poster_url ? `url(${e.poster_url}) center/cover` : GRADIENTS[idx % GRADIENTS.length],
+                transition: dragging && isTop ? "none" : "transform 0.35s cubic-bezier(0.34,1.56,0.64,1)",
               }}
             >
-              {isActive && (
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 text-left">
-                  <p className="text-[12px] font-medium text-white leading-tight">{e.title}</p>
-                  <p className="text-[10px] text-white/75">{e.venue}</p>
-                </div>
-              )}
-            </button>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-left">
+                <p className="text-[13px] font-medium text-white leading-tight">{e.title}</p>
+                <p className="text-[11px] text-white/75">{e.venue}</p>
+              </div>
+            </div>
           );
         })}
       </div>
-      <div className="flex justify-center gap-1.5 mt-3">
-        {events.map((_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === active ? "w-4 bg-ink" : "w-1.5 bg-black/15"
-            }`}
-          />
-        ))}
-      </div>
+      <p className="text-center text-[11px] text-tertiary mt-3">Swipe to browse</p>
     </div>
   );
 }
