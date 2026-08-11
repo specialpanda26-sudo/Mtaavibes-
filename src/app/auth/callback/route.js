@@ -3,7 +3,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
 export async function GET(request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
 
   if (code) {
@@ -11,5 +11,6 @@ export async function GET(request) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mtaavibes.onrender.com";
+  return NextResponse.redirect(`${siteUrl}/dashboard`);
 }
