@@ -1,6 +1,7 @@
 import Link from "next/link";
 import RippleButton from "@/components/RippleButton";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
+import CinematicHero from "@/components/CinematicHero";
 
 const MARQUEE = [
   "Fashion",
@@ -16,19 +17,19 @@ const MARQUEE = [
 export default function LandingPage() {
   return (
     <main className="px-4 pt-2">
-      {/* Animated gradient-mesh backdrop behind the hero only — logo lives in
-          the sticky header from layout.js, so this section starts at the tagline. */}
       <div className="relative -mx-4 px-4 pt-6 pb-10 mb-2 gradient-mesh rounded-b-[32px] overflow-hidden">
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-end mb-4">
           <span className="rounded-chip bg-ink px-3 py-1 text-[11px] font-medium text-white">
             beta
           </span>
         </div>
 
-        <h1 className="text-[24px] font-medium tracking-[-0.3px] mb-2 max-w-[320px]">
+        <CinematicHero />
+
+        <h1 className="text-[24px] font-medium tracking-[-0.3px] mb-2 max-w-[320px] animate-fadeSlide">
           Kenyan events, zero stress
         </h1>
-        <p className="text-[14px] text-secondary mb-6 max-w-[320px]">
+        <p className="text-[14px] text-secondary mb-6 max-w-[320px] animate-fadeSlide">
           Fashion shows, dressing competitions, dance events, campus nights &
           club events. Pay with M-Pesa. Get instant QR tickets.
         </p>
@@ -38,7 +39,7 @@ export default function LandingPage() {
             as={Link}
             href="/events"
             tone="dark"
-            className="rounded-button bg-ink px-5 py-3 text-[14px] font-medium text-white inline-block"
+            className="glass-btn rounded-button bg-ink px-5 py-3 text-[14px] font-medium text-white inline-block"
           >
             Browse events
           </RippleButton>
@@ -46,7 +47,7 @@ export default function LandingPage() {
             as={Link}
             href="/dashboard"
             tone="light"
-            className="rounded-button border border-ink px-5 py-3 text-[14px] font-medium inline-block"
+            className="glass-btn rounded-button border border-ink px-5 py-3 text-[14px] font-medium inline-block"
           >
             Sell tickets
           </RippleButton>
