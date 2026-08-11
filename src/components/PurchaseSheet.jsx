@@ -10,9 +10,6 @@ const METHODS = [
   { value: "BANK-PAYMENT", label: "Bank" },
 ];
 
-// event: { id, title, poster_url, tiers: [{ id, tier_name, price, description }] }
-// pointsBalance: number (0 if the buyer has none yet — redemption row hides itself)
-// referralCode: string | null, read from ?ref= on the page that opened this sheet
 export default function PurchaseSheet({ event, pointsBalance = 0, referralCode = null, onClose, onSubmit }) {
   const [tierId, setTierId] = useState(event.tiers?.[0]?.id);
   const [quantity, setQuantity] = useState(1);
@@ -41,7 +38,6 @@ export default function PurchaseSheet({ event, pointsBalance = 0, referralCode =
       referralCode,
       pointsRedeemed: redeemPoints ? Math.min(pointsBalance, subtotal * 2) : 0,
     });
-    // Card/Bank return a hosted checkout URL — send the buyer there to finish paying.
     if (result?.redirectUrl) {
       window.location.href = result.redirectUrl;
     }
@@ -49,7 +45,7 @@ export default function PurchaseSheet({ event, pointsBalance = 0, referralCode =
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30">
-      <div className="ticket-perforation glass w-full max-w-[480px] max-h-[85vh] overflow-y-auto rounded-t-[28px] p-5">
+      <div className="ticket-perforation glass w-full max-w-[480px] max-h-[85vh] overflow-y-auto rounded-t-[28px] p-5 pb-28">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[20px] font-medium">{event.title}</h2>
           <button
