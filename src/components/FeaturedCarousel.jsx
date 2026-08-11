@@ -1,14 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
-// 3D "coverflow" strip of upcoming events — pure CSS 3D transforms (no WebGL
-// dependency), so it stays light and works everywhere. Center card is
-// full-size and facing forward; neighbors rotate away in depth.
+const GRADIENTS = [
+  "linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)",
+  "linear-gradient(135deg, #2d132c, #801336, #c72c41)",
+  "linear-gradient(135deg, #0f2027, #203a43, #2c5364)",
+  "linear-gradient(135deg, #3a1c71, #d76d77, #ffaf7b)",
+  "linear-gradient(135deg, #232526, #414345)",
+  "linear-gradient(135deg, #134e5e, #71b280)",
+];
+
 export default function FeaturedCarousel() {
   const [events, setEvents] = useState([]);
   const [active, setActive] = useState(0);
+  const touchStartX = useRef(null);
 
   useEffect(() => {
     async function load() {
@@ -25,12 +32,28 @@ export default function FeaturedCarousel() {
 
   if (events.length === 0) return null;
 
+  function handleTouchStart(e) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(delta) > 40) {
+      if (delta < 0 && active < events.length - 1) setActive(active + 1);
+      if (delta > 0 && active > 0) setActive(active - 1);
+    }
+    touchStartX.current = null;
+  }
+
   return (
     <div className="mb-10">
       <h2 className="text-[17px] font-medium mb-4 px-0">Featured drops</h2>
       <div
         className="relative flex items-center justify-center h-[220px]"
         style={{ perspective: "1200px" }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {events.map((e, i) => {
           const offset = i - active;
@@ -56,7 +79,7 @@ export default function FeaturedCarousel() {
                 opacity: abs > 2 ? 0 : 1 - abs * 0.18,
                 background: e.poster_url
                   ? `url(${e.poster_url}) center/cover`
-                  : "linear-gradient(160deg, #d4d4d4, #a3a3a3)",
+                  : GRADIENTS[i % GRADIENTS.length],
               }}
             >
               {isActive && (
