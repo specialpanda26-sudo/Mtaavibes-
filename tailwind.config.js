@@ -7,13 +7,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // From build prompt Section 2 — "Liquid Glass" design system.
-        // Do not add blue as a primary action color — buttons stay black/white.
         ink: "#111111",
         secondary: "#666666",
         tertiary: "#999999",
         accentRed: "#dc2626",
         accentGreen: "#16a34a",
+        gold: "#d4a933",
+        goldLight: "#f5d576",
+        diamond: "#a8c8ff",
+        diamondLight: "#d4e4ff",
       },
       borderRadius: {
         card: "20px",
@@ -28,60 +30,25 @@ module.exports = {
         page: "linear-gradient(160deg, #f8f9fa 0%, #e9ecef 40%, #dee2e6 100%)",
       },
       fontWeight: {
-        // Spec allows 400 and 500 only — no 600/700 anywhere.
         normal: "400",
         medium: "500",
       },
       keyframes: {
-        floatUp: {
-          from: { opacity: 0, transform: "translateY(40px) scale(0.96)" },
-          to: { opacity: 1, transform: "translateY(0) scale(1)" },
-        },
-        pulseRing: {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(0,0,0,0.08)" },
-          "50%": { boxShadow: "0 0 0 6px rgba(0,0,0,0)" },
-        },
-        floatBrand: {
-          "0%, 100%": { transform: "translateY(0) rotate(0deg)" },
-          "50%": { transform: "translateY(-12px) rotate(2deg)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% center" },
-          "100%": { backgroundPosition: "200% center" },
-        },
-        tabUnderline: {
-          from: { transform: "scaleX(0.6)", opacity: 0.4 },
-          to: { transform: "scaleX(1)", opacity: 1 },
-        },
-        successPop: {
-          "0%": { transform: "scale(0.6)", opacity: 0 },
-          "60%": { transform: "scale(1.1)", opacity: 1 },
-          "100%": { transform: "scale(1)" },
-        },
-        fadeSlide: {
-          from: { opacity: 0, transform: "translateX(8px)" },
-          to: { opacity: 1, transform: "translateX(0)" },
-        },
-        shimmerSweep: {
-          "0%": { transform: "translateX(-150%) rotate(8deg)" },
-          "100%": { transform: "translateX(150%) rotate(8deg)" },
-        },
-        meshShift: {
-          "0%, 100%": { backgroundPosition: "0% 0%, 100% 0%, 50% 100%" },
-          "50%": { backgroundPosition: "100% 50%, 0% 100%, 50% 0%" },
-        },
-        ripple: {
-          from: { transform: "scale(0)", opacity: 0.45 },
-          to: { transform: "scale(2.8)", opacity: 0 },
-        },
-        flipDown: {
-          "0%": { transform: "rotateX(0deg)" },
-          "100%": { transform: "rotateX(-90deg)" },
-        },
-        cardIn3d: {
-          from: { opacity: 0, transform: "perspective(1000px) rotateY(-18deg) translateY(24px)" },
-          to: { opacity: 1, transform: "perspective(1000px) rotateY(0deg) translateY(0)" },
-        },
+        floatUp: { from: { opacity: 0, transform: "translateY(40px) scale(0.96)" }, to: { opacity: 1, transform: "translateY(0) scale(1)" } },
+        pulseRing: { "0%, 100%": { boxShadow: "0 0 0 0 rgba(0,0,0,0.08)" }, "50%": { boxShadow: "0 0 0 6px rgba(0,0,0,0)" } },
+        floatBrand: { "0%, 100%": { transform: "translateY(0) rotate(0deg)" }, "50%": { transform: "translateY(-12px) rotate(2deg)" } },
+        shimmer: { "0%": { backgroundPosition: "-200% center" }, "100%": { backgroundPosition: "200% center" } },
+        tabUnderline: { from: { transform: "scaleX(0.6)", opacity: 0.4 }, to: { transform: "scaleX(1)", opacity: 1 } },
+        successPop: { "0%": { transform: "scale(0.6)", opacity: 0 }, "60%": { transform: "scale(1.1)", opacity: 1 }, "100%": { transform: "scale(1)" } },
+        fadeSlide: { from: { opacity: 0, transform: "translateX(8px)" }, to: { opacity: 1, transform: "translateX(0)" } },
+        shimmerSweep: { "0%": { transform: "translateX(-150%) rotate(8deg)" }, "100%": { transform: "translateX(150%) rotate(8deg)" } },
+        meshShift: { "0%, 100%": { backgroundPosition: "0% 0%, 100% 0%, 50% 100%" }, "50%": { backgroundPosition: "100% 50%, 0% 100%, 50% 0%" } },
+        ripple: { from: { transform: "scale(0)", opacity: 0.45 }, to: { transform: "scale(2.8)", opacity: 0 } },
+        flipDown: { "0%": { transform: "rotateX(0deg)" }, "100%": { transform: "rotateX(-90deg)" } },
+        cardIn3d: { from: { opacity: 0, transform: "perspective(1000px) rotateY(-18deg) translateY(24px)" }, to: { opacity: 1, transform: "perspective(1000px) rotateY(0deg) translateY(0)" } },
+        pulseDot: { "0%, 100%": { transform: "scale(1)", opacity: 1 }, "50%": { transform: "scale(1.4)", opacity: 0.6 } },
+        beamSpin: { from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } },
+        confettiFall: { "0%": { transform: "translateY(-20px) rotate(0deg)", opacity: 1 }, "100%": { transform: "translateY(120px) rotate(360deg)", opacity: 0 } },
       },
       animation: {
         floatUp: "floatUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both",
@@ -95,6 +62,9 @@ module.exports = {
         meshShift: "meshShift 14s ease-in-out infinite",
         ripple: "ripple 0.6s ease-out forwards",
         cardIn3d: "cardIn3d 0.6s cubic-bezier(0.16, 1, 0.3, 1) both",
+        pulseDot: "pulseDot 1.2s ease-in-out infinite",
+        beamSpin: "beamSpin 1.4s linear infinite",
+        confettiFall: "confettiFall 1.2s ease-in forwards",
       },
     },
   },

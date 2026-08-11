@@ -134,3 +134,96 @@ body {
 .magnetic-btn.light .ripple-dot {
   background: rgba(17, 17, 17, 0.15);
 }
+
+/* ============================================================
+   LIQUID GLASS MORPHISM — deeper layered glass system
+   ============================================================ */
+
+/* Frosted glass with inner glow + refraction edge — use for elevated cards */
+.glass-deep {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 8px rgba(255, 255, 255, 0.4);
+}
+
+/* Dark glass variant — for overlays/sheets on top of vivid backgrounds */
+.glass-dark {
+  background: rgba(17, 17, 17, 0.55);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Buttons — spring hover lift + press depth, works with any bg */
+.glass-btn {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+}
+.glass-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
+}
+.glass-btn:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+  transition-duration: 0.1s;
+}
+
+/* ============================================================
+   PREMIUM TICKET TIER THEMES — gold / diamond / platinum
+   ============================================================ */
+
+.ticket-tier-general {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.ticket-tier-vip {
+  background: linear-gradient(135deg, rgba(255, 215, 130, 0.35), rgba(255, 255, 255, 0.55));
+  backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255, 200, 90, 0.65);
+  box-shadow:
+    0 8px 32px rgba(200, 150, 30, 0.18),
+    inset 0 1px 0 rgba(255, 235, 180, 0.9);
+}
+.ticket-tier-vip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 40%, rgba(255, 223, 130, 0.4) 50%, transparent 60%);
+  animation: shimmerSweep 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ticket-tier-premium {
+  background: linear-gradient(135deg, rgba(200, 220, 255, 0.35), rgba(255, 255, 255, 0.5), rgba(230, 200, 255, 0.3));
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(180, 200, 255, 0.7);
+  box-shadow:
+    0 10px 40px rgba(100, 120, 220, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 12px rgba(200, 180, 255, 0.35);
+}
+.ticket-tier-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 35%, rgba(255, 255, 255, 0.6) 50%, rgba(220, 190, 255, 0.4) 55%, transparent 65%);
+  animation: shimmerSweep 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.tier-badge-gold {
+  background: linear-gradient(135deg, #f5d576, #d4a933);
+  color: #4a3400;
+}
+.tier-badge-diamond {
+  background: linear-gradient(135deg, #d4e4ff, #a8c8ff, #e0d0ff);
+  color: #1a2a5e;
+}
