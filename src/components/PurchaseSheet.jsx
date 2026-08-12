@@ -1,8 +1,7 @@
 "use client";
-
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import PaymentButton from "./PaymentButton";
-import { pointsToKsh } from "@/lib/constants";
 
 const METHODS = [
   { value: "M-PESA", label: "M-Pesa" },
@@ -10,20 +9,16 @@ const METHODS = [
   { value: "BANK-PAYMENT", label: "Bank" },
 ];
 
-export default function PurchaseSheet({ event, pointsBalance = 0, referralCode = null, onClose, onSubmit }) {
+export default function PurchaseSheet({ event, onClose, onSubmit }) {
   const [tierId, setTierId] = useState(event.tiers?.[0]?.id);
   const [quantity, setQuantity] = useState(1);
-  const [redeemPoints, setRedeemPoints] = useState(false);
   const [method, setMethod] = useState("M-PESA");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
   const tier = event.tiers.find((t) => t.id === tierId) ?? event.tiers[0];
   const subtotal = (tier?.price ?? 0) * quantity;
-  const pointsDiscount = redeemPoints ? Math.min(pointsToKsh(pointsBalance), subtotal) : 0;
-  const total = Math.max(subtotal - pointsDiscount, 0);
-
-  const canRedeem = pointsBalance > 0;
+  const total = subtotal;
   const canPay = method === "M-PESA" ? !!phone : !!email;
 
   async function handlePay() {
@@ -35,135 +30,201 @@ export default function PurchaseSheet({ event, pointsBalance = 0, referralCode =
       method,
       phoneNumber: phone || undefined,
       email: email || undefined,
-      referralCode,
-      pointsRedeemed: redeemPoints ? Math.min(pointsBalance, subtotal * 2) : 0,
     });
-    if (result?.redirectUrl) {
-      window.location.href = result.redirectUrl;
-    }
+    if (result?.redirectUrl) window.location.href = result.redirectUrl;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30">
-      <div className="ticket-perforation glass w-full max-w-[480px] max-h-[85vh] overflow-y-auto rounded-t-[28px] p-5 pb-28">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[20px] font-medium">{event.title}</h2>
-          <button
-            onClick={onClose}
-            className="glass h-8 w-8 rounded-full text-secondary"
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="ticket-perforation glass-deep w-full max-w-[480px] max-h-[88vh] overflow-y-auto rounded-t-[36px] p-6 pb-32"
+        >
+          <div className="flex justify-center mb-4">
+            <div className="h-1 w-12 rounded-full bg-black/10" />
+          </div>
+
+          <div className="flex items-center justify-between mb-5">
+            <motion.h2
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-[22px] font-medium tracking-tight"
+            >
+              {event.title}
+            </motion.h2>
+            <motion.button
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onClose}
+              className="glass h-10 w-10 rounded-full flex items-center justify-center text-secondary text-lg"
+            >
+              ×
+            </motion.button>
+          </div>
+
+          {event.poster_url && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.15 }}
+              className="h-[160px] w-full rounded-2xl mb-6 bg-cover bg-center"
+              style={{ backgroundImage: `url(${event.poster_url})` }}
+            />
+          )}
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-[14px] font-medium mb-3"
           >
-            ×
-          </button>
-        </div>
-
-        {event.poster_url && (
-          <div
-            className="h-[140px] w-full rounded-2xl mb-5 bg-cover bg-center"
-            style={{ backgroundImage: `url(${event.poster_url})` }}
-          />
-        )}
-
-        <p className="text-[14px] font-medium mb-2">Select ticket tier</p>
-        <div className="flex gap-2 mb-5">
-          {event.tiers.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTierId(t.id)}
-              className={[
-                "flex-1 rounded-2xl border p-3 text-left transition-colors",
-                t.id === tierId
-                  ? "bg-ink text-white border-ink"
-                  : "glass border-white/60 text-secondary",
-              ].join(" ")}
-            >
-              <p className="text-[13px] font-medium capitalize">{t.tier_name}</p>
-              <p className="text-[16px] font-medium">KSh {t.price}</p>
-              <p className="text-[11px] opacity-70">{t.description}</p>
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <p className="text-[14px] font-medium">Number of tickets</p>
-            <p className="text-[12px] text-tertiary capitalize">{tier?.tier_name}</p>
+            Select ticket tier
+          </motion.p>
+          <div className="flex gap-2 mb-6">
+            {event.tiers.map((t, i) => (
+              <motion.button
+                key={t.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 + i * 0.08 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setTierId(t.id)}
+                className={[
+                  "flex-1 rounded-2xl border-2 p-4 text-left transition-all duration-300",
+                  t.id === tierId
+                    ? "bg-ink text-white border-ink shadow-glow"
+                    : "glass border-white/60 text-secondary hover:border-ink/20",
+                ].join(" ")}
+              >
+                <p className="text-[12px] font-medium uppercase tracking-wider opacity-70 mb-1">
+                  {t.tier_name}
+                </p>
+                <p className="text-[18px] font-medium tracking-tight">
+                  KSh {t.price.toLocaleString()}
+                </p>
+                <p className="text-[11px] mt-1 opacity-60">{t.description}</p>
+              </motion.button>
+            ))}
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="glass h-9 w-9 rounded-[12px] text-[18px] font-medium"
-            >
-              −
-            </button>
-            <span className="text-[18px] font-medium w-6 text-center">{quantity}</span>
-            <button
-              onClick={() => setQuantity((q) => Math.min(20, q + 1))}
-              className="glass h-9 w-9 rounded-[12px] text-[18px] font-medium"
-            >
-              +
-            </button>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="flex items-center justify-between mb-6 py-4 border-y border-black/5"
+          >
+            <div>
+              <p className="text-[15px] font-medium">Number of tickets</p>
+              <p className="text-[12px] text-tertiary capitalize">{tier?.tier_name} admission</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="glass h-10 w-10 rounded-xl text-[18px] font-medium flex items-center justify-center"
+              >
+                −
+              </motion.button>
+              <motion.span
+                key={quantity}
+                initial={{ scale: 1.3, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-[20px] font-medium w-8 text-center"
+              >
+                {quantity}
+              </motion.span>
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={() => setQuantity((q) => Math.min(20, q + 1))}
+                className="glass h-10 w-10 rounded-xl text-[18px] font-medium flex items-center justify-center"
+              >
+                +
+              </motion.button>
+            </div>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.45 }}
+            className="text-[14px] font-medium mb-3"
+          >
+            Pay with
+          </motion.p>
+          <div className="flex gap-2 mb-5">
+            {METHODS.map((m, i) => (
+              <motion.button
+                key={m.value}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + i * 0.05 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setMethod(m.value)}
+                className={[
+                  "flex-1 rounded-xl border-2 px-3 py-2.5 text-[13px] font-medium transition-all",
+                  m.value === method ? "bg-ink text-white border-ink" : "glass border-white/60 text-secondary",
+                ].join(" ")}
+              >
+                {m.label}
+              </motion.button>
+            ))}
           </div>
-        </div>
 
-        <p className="text-[14px] font-medium mb-2">Pay with</p>
-        <div className="flex gap-2 mb-4">
-          {METHODS.map((m) => (
-            <button
-              key={m.value}
-              onClick={() => setMethod(m.value)}
-              className={[
-                "flex-1 rounded-2xl border px-3 py-2 text-[13px] font-medium transition-colors",
-                m.value === method
-                  ? "bg-ink text-white border-ink"
-                  : "glass border-white/60 text-secondary",
-              ].join(" ")}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-
-        {method === "M-PESA" ? (
-          <input
-            type="tel"
-            placeholder="M-Pesa phone number (07XX XXX XXX)"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full glass rounded-2xl px-4 py-3 text-[14px] mb-5 outline-none"
-          />
-        ) : (
-          <input
-            type="email"
-            placeholder="Email (for your receipt + checkout link)"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full glass rounded-2xl px-4 py-3 text-[14px] mb-5 outline-none"
-          />
-        )}
-
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[15px] font-medium">Total</span>
-          <span className="text-[24px] font-medium">KSh {total.toLocaleString()}</span>
-        </div>
-
-        {canRedeem && (
-          <label className="flex items-center justify-between glass rounded-2xl px-4 py-3 mb-5 cursor-pointer">
-            <span className="flex items-center gap-2 text-[13px] font-medium">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}>
+            {method === "M-PESA" ? (
               <input
-                type="checkbox"
-                checked={redeemPoints}
-                onChange={(e) => setRedeemPoints(e.target.checked)}
+                type="tel"
+                placeholder="M-Pesa phone number (07XX XXX XXX)"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full glass rounded-2xl px-5 py-4 text-[15px] mb-6 outline-none placeholder:text-tertiary"
               />
-              Use my points
-            </span>
-            <span className="text-[12px] text-tertiary">
-              {pointsBalance} pts ≈ KSh {pointsToKsh(pointsBalance)} off
-            </span>
-          </label>
-        )}
+            ) : (
+              <input
+                type="email"
+                placeholder="Email for receipt"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full glass rounded-2xl px-5 py-4 text-[15px] mb-6 outline-none placeholder:text-tertiary"
+              />
+            )}
+          </motion.div>
 
-        <PaymentButton amount={total} method={method} onPay={handlePay} disabled={!canPay} />
-      </div>
-    </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="flex items-center justify-between mb-6"
+          >
+            <span className="text-[15px] font-medium">Total</span>
+            <motion.span
+              key={total}
+              initial={{ scale: 1.2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-[28px] font-medium tracking-tight"
+            >
+              KSh {total.toLocaleString()}
+            </motion.span>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}>
+            <PaymentButton amount={total} method={method} onPay={handlePay} disabled={!canPay} />
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
