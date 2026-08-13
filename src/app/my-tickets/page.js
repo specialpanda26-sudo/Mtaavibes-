@@ -93,9 +93,23 @@ export default function MyTicketsPage() {
     );
   }
 
+  function handleSwitchNumber() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("buyerPhone");
+    window.location.reload();
+  }
+
   return (
     <main className="px-4 pt-5">
-      <h1 className="text-[18px] font-medium mb-4">My tickets</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-[18px] font-medium">My tickets</h1>
+        <button
+          onClick={handleSwitchNumber}
+          className="rounded-lg bg-black/5 px-3 py-1.5 text-[12px] font-medium text-secondary"
+        >
+          Not you? Switch number
+        </button>
+      </div>
 
       <div className="mb-5 -mx-4">
         <TabBar tabs={TABS} activeTab={tab} onChange={setTab} />

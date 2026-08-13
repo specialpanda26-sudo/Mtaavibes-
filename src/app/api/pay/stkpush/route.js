@@ -103,7 +103,7 @@ export async function POST(req) {
         first_name: firstName || "Mtaa",
         last_name: lastName || "Vibes",
         host: process.env.NEXT_PUBLIC_SITE_URL,
-        redirect_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pay/complete`,
+        redirect_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pay/complete?api_ref=${apiRef}`,
         api_ref: apiRef,
         method,
       }),
@@ -138,5 +138,5 @@ export async function POST(req) {
     points_redeemed: pointsRedeemed ?? 0,
   });
 
-  return NextResponse.json({ invoiceId, redirectUrl });
+  return NextResponse.json({ invoiceId, redirectUrl, apiRef });
 }

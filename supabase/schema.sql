@@ -12,6 +12,7 @@ CREATE TABLE events (
   venue TEXT NOT NULL,
   event_date TIMESTAMPTZ NOT NULL,
   poster_url TEXT,
+  gallery_images TEXT[] DEFAULT '{}', -- concert/crowd photos shown on the event card + purchase sheet
   status TEXT DEFAULT 'draft' CHECK (status IN ('draft','live','paused','ended')),
   commission_rate DECIMAL DEFAULT 0.10,
   organizer_mpesa_number TEXT NOT NULL,
@@ -23,7 +24,7 @@ CREATE TABLE events (
 CREATE TABLE event_tiers (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   event_id UUID REFERENCES events(id) ON DELETE CASCADE,
-  tier_name TEXT NOT NULL CHECK (tier_name IN ('general','vip','premium')),
+  tier_name TEXT NOT NULL CHECK (tier_name IN ('silver','gold','diamond','premium')),
   price INTEGER NOT NULL,
   description TEXT,
   perks TEXT[]
@@ -158,6 +159,37 @@ create policy "Organizers view their own ID files"
   to authenticated
   using (
     bucket_id = 'organizer-ids'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- ============================================================================
+-- Event images: posters + gallery (public)
+-- ============================================================================
+-- Public bucket for event posters and gallery photos (concert shots, crowd,
+-- dancefloor). Anyone can view; only authenticated organizers can upload,
+-- scoped to a folder named after their own user id (mirrors organizer-ids).
+insert into storage.buckets (id, name, public)
+values ('event-images', 'event-images', true)
+on conflict (id) do nothing;
+
+create policy "Anyone can view event images"
+  on storage.objects for select
+  to public
+  using (bucket_id = 'event-images');
+
+create policy "Organizers upload their own event images"
+  on storage.objects for insert
+  to authenticated
+  with check (
+    bucket_id = 'event-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "Organizers delete their own event images"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'event-images'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 

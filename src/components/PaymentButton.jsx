@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import RippleButton from "./RippleButton";
 import ConfettiBurst from "./ConfettiBurst";
 
@@ -9,6 +10,55 @@ const LABELS = {
   "CARD-PAYMENT": "Card",
   "BANK-PAYMENT": "Bank",
 };
+
+// Small animated card mockup shown above the button for card payments —
+// idle → scanning beam while "sending" → green checkmark morph on success.
+function CardPaymentVisual({ status }) {
+  return (
+    <div className="relative mx-auto mb-5 h-[124px] w-[210px]">
+      <div
+        className="relative h-full w-full overflow-hidden rounded-2xl p-4 flex flex-col justify-between"
+        style={{ background: "linear-gradient(135deg, #1a1a1a, #0a0a0a)" }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="h-5 w-7 rounded-[4px] bg-gradient-to-br from-gold to-gold-light" />
+          <span className="text-[9px] font-medium tracking-[2px] text-white/40">OGOLLA PAY</span>
+        </div>
+        <p className="text-[13px] tracking-[2px] text-white/80">•••• •••• •••• 9901</p>
+
+        {status === "sending" && (
+          <motion.div
+            className="absolute inset-y-0 w-12 bg-gradient-to-r from-transparent via-white/25 to-transparent"
+            initial={{ left: "-48px" }}
+            animate={{ left: "210px" }}
+            transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+          />
+        )}
+
+        {status === "sent" && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 320, damping: 18 }}
+            className="absolute inset-0 flex items-center justify-center bg-accent-green/90"
+          >
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1, type: "spring", stiffness: 400, damping: 12 }}
+              className="text-[26px] text-white"
+            >
+              ✓
+            </motion.span>
+          </motion.div>
+        )}
+      </div>
+      <p className="mt-2 text-center text-[10px] text-tertiary">
+        {status === "sending" ? "Verifying card…" : status === "sent" ? "Payment successful" : "Card ready"}
+      </p>
+    </div>
+  );
+}
 
 export default function PaymentButton({ amount, method = "M-PESA", onPay, disabled = false }) {
   const [status, setStatus] = useState("idle");
@@ -38,6 +88,7 @@ export default function PaymentButton({ amount, method = "M-PESA", onPay, disabl
   return (
     <div className="text-center relative">
       <ConfettiBurst trigger={celebrate} />
+      {method === "CARD-PAYMENT" && <CardPaymentVisual status={status} />}
 
       <RippleButton
         onClick={handleClick}

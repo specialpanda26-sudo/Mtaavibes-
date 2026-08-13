@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
+import TierBadge from "./TierBadge";
 
 export default function EventCard({ event, onSelect, index = 0 }) {
   const cardRef = useRef(null);
@@ -102,11 +103,30 @@ export default function EventCard({ event, onSelect, index = 0 }) {
         </div>
       </div>
 
+      {event.gallery_images?.length > 0 && (
+        <div className="flex gap-1.5 px-5 pt-4 overflow-x-auto no-scrollbar">
+          {event.gallery_images.slice(0, 6).map((url, i) => (
+            <motion.div
+              key={url}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.05 }}
+              whileHover={{ scale: 1.06 }}
+              className="h-14 w-14 shrink-0 rounded-xl bg-cover bg-center shadow-soft"
+              style={{ backgroundImage: `url(${url})` }}
+            />
+          ))}
+        </div>
+      )}
+
       <div className="p-5">
         <div className="flex gap-2 mb-4">
           {event.tiers?.map((t) => (
             <div key={t.id} className="flex-1 glass rounded-xl px-3 py-2 text-center">
-              <p className="text-[10px] text-tertiary uppercase tracking-wider">{t.tier_name}</p>
+              <div className="flex justify-center mb-1">
+                <TierBadge tierName={t.tier_name} size="sm" />
+              </div>
               <p className="text-[14px] font-medium">KSh {t.price}</p>
             </div>
           ))}

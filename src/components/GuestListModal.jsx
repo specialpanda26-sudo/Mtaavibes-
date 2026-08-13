@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import TabBar from "./TabBar";
+import Portal from "./Portal";
 
 const TABS = [
   { value: "all", label: "All" },
@@ -36,7 +37,8 @@ export default function GuestListModal({ eventId, onClose }) {
   }, [tickets, status, search]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30">
       <div className="glass w-full max-w-[480px] max-h-[85vh] overflow-y-auto rounded-t-[28px] p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[18px] font-medium">Guest list</h2>
@@ -72,5 +74,6 @@ export default function GuestListModal({ eventId, onClose }) {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

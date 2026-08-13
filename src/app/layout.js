@@ -3,6 +3,7 @@ import FloatingBrands from "@/components/FloatingBrands";
 import BottomNav from "@/components/BottomNav";
 import AnimatedLogo from "@/components/AnimatedLogo";
 import CursorGlow from "@/components/CursorGlow";
+import AppBootSplash from "@/components/AppBootSplash";
 
 export const metadata = {
   title: "Mtaa Vibes",
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="relative min-h-screen font-sans text-ink">
+        <AppBootSplash />
         <CursorGlow />
         <FloatingBrands />
         <AnimatedLogo />

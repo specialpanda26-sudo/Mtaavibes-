@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import PaymentButton from "./PaymentButton";
+import Portal from "./Portal";
+import TierBadge from "./TierBadge";
 
 const METHODS = [
   { value: "M-PESA", label: "M-Pesa" },
@@ -31,11 +33,22 @@ export default function PurchaseSheet({ event, onClose, onSubmit }) {
       phoneNumber: phone || undefined,
       email: email || undefined,
     });
-    if (result?.redirectUrl) window.location.href = result.redirectUrl;
+    if (result?.redirectUrl) {
+      // Card / Bank — IntaSend's hosted checkout, then back to /pay/complete.
+      window.location.href = result.redirectUrl;
+    } else if (result?.apiRef) {
+      // M-Pesa — let the "sent" checkmark play for a beat, then take the
+      // buyer to a real confirmation screen that polls until the webhook
+      // has actually finished creating the ticket.
+      setTimeout(() => {
+        window.location.href = `/pay/complete?api_ref=${result.apiRef}`;
+      }, 1700);
+    }
   }
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -108,9 +121,9 @@ export default function PurchaseSheet({ event, onClose, onSubmit }) {
                     : "glass border-white/60 text-secondary hover:border-ink/20",
                 ].join(" ")}
               >
-                <p className="text-[12px] font-medium uppercase tracking-wider opacity-70 mb-1">
-                  {t.tier_name}
-                </p>
+                <div className="mb-1.5">
+                  <TierBadge tierName={t.tier_name} size="sm" animated={false} />
+                </div>
                 <p className="text-[18px] font-medium tracking-tight">
                   KSh {t.price.toLocaleString()}
                 </p>
@@ -226,5 +239,6 @@ export default function PurchaseSheet({ event, onClose, onSubmit }) {
         </motion.div>
       </motion.div>
     </AnimatePresence>
+    </Portal>
   );
 }

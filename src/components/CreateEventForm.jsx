@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { CATEGORIES, KENYAN_PHONE_REGEX } from "@/lib/constants";
+import { CATEGORIES, KENYAN_PHONE_REGEX, TIERS } from "@/lib/constants";
+import Portal from "./Portal";
+import ImageUploader from "./ImageUploader";
+import TierBadge from "./TierBadge";
 
 export default function CreateEventForm({ organizerId, onClose, onCreated }) {
   const [title, setTitle] = useState("");
@@ -11,11 +14,13 @@ export default function CreateEventForm({ organizerId, onClose, onCreated }) {
   const [venue, setVenue] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [organizerMpesa, setOrganizerMpesa] = useState("");
-  const [tiers, setTiers] = useState({
-    general: { price: "", description: "Standard entry" },
-    vip: { price: "", description: "Priority queue + drink" },
-    premium: { price: "", description: "All-access + backstage" },
-  });
+  const [posterUrl, setPosterUrl] = useState(null);
+  const [galleryUrls, setGalleryUrls] = useState([]);
+  const [tiers, setTiers] = useState(
+    Object.fromEntries(
+      TIERS.map((t) => [t.value, { price: "", description: t.defaultDescription }])
+    )
+  );
   const [bulkTiers, setBulkTiers] = useState([{ minQuantity: 5, discountPercent: 10, label: "Squad (5)" }]);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -49,6 +54,8 @@ export default function CreateEventForm({ organizerId, onClose, onCreated }) {
           venue,
           event_date: eventDate,
           organizer_mpesa_number: organizerMpesa,
+          poster_url: posterUrl,
+          gallery_images: galleryUrls,
           status: "live",
         })
         .select()
@@ -85,7 +92,8 @@ export default function CreateEventForm({ organizerId, onClose, onCreated }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30">
       <form
         onSubmit={handleSubmit}
         className="glass w-full max-w-[480px] max-h-[85vh] overflow-y-auto rounded-t-[28px] p-5"
@@ -133,10 +141,33 @@ export default function CreateEventForm({ organizerId, onClose, onCreated }) {
           className="w-full glass rounded-2xl px-4 py-3 text-[14px] mb-5 outline-none"
         />
 
+        <div className="mb-5">
+          <ImageUploader
+            organizerId={organizerId}
+            mode="single"
+            label="Poster image"
+            value={posterUrl}
+            onChange={setPosterUrl}
+          />
+        </div>
+
+        <div className="mb-5">
+          <ImageUploader
+            organizerId={organizerId}
+            mode="multiple"
+            max={6}
+            label="Event gallery (concert shots, crowd, dancefloor…)"
+            value={galleryUrls}
+            onChange={setGalleryUrls}
+          />
+        </div>
+
         <p className="text-[13px] font-medium mb-2">Tier pricing (KSh)</p>
         {Object.entries(tiers).map(([name, t]) => (
-          <div key={name} className="flex gap-2 mb-2">
-            <span className="w-20 shrink-0 pt-3 text-[12px] text-secondary capitalize">{name}</span>
+          <div key={name} className="flex gap-2 mb-2 items-start">
+            <div className="w-20 shrink-0 pt-2.5">
+              <TierBadge tierName={name} size="sm" animated={false} />
+            </div>
             <input
               type="number"
               placeholder="Price"
@@ -146,16 +177,14 @@ export default function CreateEventForm({ organizerId, onClose, onCreated }) {
               }
               className="w-24 glass rounded-2xl px-3 py-2 text-[13px] outline-none"
             />
-            {name !== "general" && (
-              <input
-                placeholder="Perks"
-                value={t.description}
-                onChange={(e) =>
-                  setTiers((prev) => ({ ...prev, [name]: { ...prev[name], description: e.target.value } }))
-                }
-                className="flex-1 glass rounded-2xl px-3 py-2 text-[13px] outline-none"
-              />
-            )}
+            <input
+              placeholder="Perks"
+              value={t.description}
+              onChange={(e) =>
+                setTiers((prev) => ({ ...prev, [name]: { ...prev[name], description: e.target.value } }))
+              }
+              className="flex-1 glass rounded-2xl px-3 py-2 text-[13px] outline-none"
+            />
           </div>
         ))}
 
@@ -216,6 +245,7 @@ export default function CreateEventForm({ organizerId, onClose, onCreated }) {
           {submitting ? "Publishing…" : "Publish event"}
         </button>
       </form>
-    </div>
+      </div>
+    </Portal>
   );
 }

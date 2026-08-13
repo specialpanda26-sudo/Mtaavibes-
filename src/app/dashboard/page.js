@@ -6,6 +6,7 @@ import GlassCard from "@/components/GlassCard";
 import CreateEventForm from "@/components/CreateEventForm";
 import GuestListModal from "@/components/GuestListModal";
 import IdVerificationForm from "@/components/IdVerificationForm";
+import SignOutButton from "@/components/SignOutButton";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -64,7 +65,13 @@ export default function DashboardPage() {
 
   return (
     <main className="px-4 pt-5">
-      <h1 className="text-[18px] font-medium mb-5">Dashboard</h1>
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h1 className="text-[18px] font-medium">Dashboard</h1>
+          <p className="text-[12px] text-tertiary truncate max-w-[220px]">{user.email}</p>
+        </div>
+        <SignOutButton />
+      </div>
 
       {!isVerified && (
         <GlassCard className="p-5 mb-6">

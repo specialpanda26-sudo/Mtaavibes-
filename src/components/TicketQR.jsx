@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
+import TierBadge from "./TierBadge";
 
 export default function TicketQR({ ticket }) {
   const cardRef = useRef(null);
@@ -79,11 +80,11 @@ export default function TicketQR({ ticket }) {
           {ticket.event?.venue}
         </p>
 
+        <div className="flex justify-center mb-4">
+          <TierBadge tierName={ticket.tier_name} size="lg" />
+        </div>
+
         <div className="flex justify-center gap-6 mb-4 text-[12px]">
-          <div>
-            <p className="text-tertiary text-[10px] uppercase tracking-wider mb-0.5">Tier</p>
-            <p className="font-medium capitalize">{ticket.tier_name}</p>
-          </div>
           <div>
             <p className="text-tertiary text-[10px] uppercase tracking-wider mb-0.5">Price</p>
             <p className="font-medium">KSh {ticket.amount_paid?.toLocaleString()}</p>
@@ -111,6 +112,16 @@ export default function TicketQR({ ticket }) {
         </div>
 
         <p className="text-[11px] text-tertiary font-mono">{ticket.transaction_id}</p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+        className="mt-5 pt-4 border-t border-black/5 flex items-center justify-center gap-2"
+      >
+        <TierBadge tierName={ticket.tier_name} size="sm" animated={false} />
+        <span className="text-[10px] text-tertiary">member ticket</span>
       </motion.div>
     </motion.div>
   );
