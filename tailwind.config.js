@@ -14,6 +14,11 @@ module.exports = {
         tertiary: "#a3a3a3",
         "accent-red": "#dc2626",
         "accent-green": "#16a34a",
+        // Camel-case aliases — several components reference bg-accentRed /
+        // text-accentGreen etc. Without these the classes are no-ops and
+        // error/status colors silently don't render.
+        accentRed: "#dc2626",
+        accentGreen: "#16a34a",
         gold: "#d4af37",
         "gold-light": "#f4d03f",
       },
@@ -33,6 +38,7 @@ module.exports = {
         glow: "0 0 40px rgba(212,175,55,0.15)",
         "glow-red": "0 0 40px rgba(220,38,38,0.12)",
         cinematic: "0 25px 80px rgba(0,0,0,0.18)",
+        softLg: "0 20px 60px rgba(0,0,0,0.12)",
       },
       animation: {
         "float-up": "floatUp 0.9s cubic-bezier(0.16,1,0.3,1) both",
@@ -56,6 +62,27 @@ module.exports = {
         "slide-up": "slideUp 0.5s cubic-bezier(0.16,1,0.3,1) both",
         "light-leak": "lightLeak 12s ease-in-out infinite",
         "ambient-drift": "ambientDrift 20s ease-in-out infinite",
+        // Camel-case aliases for every animation above — several components
+        // reference e.g. animate-floatUp / animate-cardIn3d / animate-successPop.
+        // Without these the classes were no-ops (invisible animations).
+        floatUp: "floatUp 0.9s cubic-bezier(0.16,1,0.3,1) both",
+        floatUpSlow: "floatUp 1.2s cubic-bezier(0.16,1,0.3,1) both",
+        cardIn3d: "cardIn3d 0.8s cubic-bezier(0.16,1,0.3,1) both",
+        fadeSlide: "fadeSlide 0.6s ease-out both",
+        scaleIn: "scaleIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both",
+        pulseRing: "pulseRing 2.5s ease-in-out infinite",
+        floatBrand: "floatBrand 8s ease-in-out infinite",
+        holoSweep: "holoSweep 5s ease-in-out infinite",
+        ticketFlip: "ticketFlip 0.9s cubic-bezier(0.16,1,0.3,1) both",
+        beamSpin: "beamSpin 1.5s linear infinite",
+        successPop: "successPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both",
+        countPulse: "countPulse 0.3s ease-out",
+        slideUp: "slideUp 0.5s cubic-bezier(0.16,1,0.3,1) both",
+        lightLeak: "lightLeak 12s ease-in-out infinite",
+        ambientDrift: "ambientDrift 20s ease-in-out infinite",
+        // Genuinely new — referenced by components but never defined at all.
+        pulseDot: "pulseDot 1.1s ease-in-out infinite",
+        tabUnderline: "tabUnderline 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
       },
       keyframes: {
         floatUp: {
@@ -143,6 +170,14 @@ module.exports = {
           "0%, 100%": { transform: "translate(0, 0) rotate(0deg)" },
           "33%": { transform: "translate(10px, -15px) rotate(1deg)" },
           "66%": { transform: "translate(-5px, 10px) rotate(-0.5deg)" },
+        },
+        pulseDot: {
+          "0%, 100%": { opacity: "1", transform: "scale(1)" },
+          "50%": { opacity: "0.4", transform: "scale(0.75)" },
+        },
+        tabUnderline: {
+          "0%": { opacity: "0", transform: "scale(0.4)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
         },
       },
     },
