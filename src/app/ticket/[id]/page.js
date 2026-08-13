@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import TicketQR from "@/components/TicketQR";
 import FlipCountdown from "@/components/FlipCountdown";
 import ConfettiBurst from "@/components/ConfettiBurst";
+import DeleteTicketButton from "@/components/DeleteTicketButton";
 
 export default function TicketPage({ params }) {
+  const router = useRouter();
   const [ticket, setTicket] = useState(null);
   const [celebrate, setCelebrate] = useState(false);
   const cardWrapperRef = useRef(null);
@@ -74,6 +77,14 @@ export default function TicketPage({ params }) {
         >
           Share to WhatsApp
         </a>
+      </div>
+
+      <div className="mx-auto mt-3 max-w-[380px]">
+        <DeleteTicketButton
+          ticketId={params.id}
+          variant="button"
+          onDeleted={() => router.push("/my-tickets")}
+        />
       </div>
     </main>
   );

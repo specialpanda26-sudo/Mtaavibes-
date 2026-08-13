@@ -11,16 +11,47 @@ import PurchaseSheet from "@/components/PurchaseSheet";
 
 const TABS = [{ value: "all", label: "All events" }, ...CATEGORIES.map((c) => ({ value: c.value, label: c.label }))];
 
+// Session-only cache so hopping between the bottom-nav tabs doesn't blank
+// the feed and refetch from scratch every time — the route fully unmounts
+// on navigation (separate pages), which used to reset state to "loading"
+// and show a skeleton flash even though we'd already fetched this data
+// seconds earlier. We still refetch in the background to stay fresh; we
+// just don't blank the screen while doing it.
+const CACHE_KEY = "mtaavibes:eventsCache";
+
+function readCache() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(events) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(events));
+  } catch {
+    // storage full/unavailable — non-fatal, just skip caching
+  }
+}
+
 export default function EventFeedPage() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cached = useMemo(readCache, []);
+  const [events, setEvents] = useState(cached ?? []);
+  const [loading, setLoading] = useState(!cached);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     async function load() {
-      setLoading(true);
+      // Only show the skeleton if we have nothing to show yet — a
+      // background refresh shouldn't blank out cards the person can
+      // already see.
+      if (!cached) setLoading(true);
       // Full query should join event_tiers + bulk_discounts to compute
       // lowestPrice / bulkDiscounts — see PAGE B + Section 4 schema in the build prompt.
       const { data, error } = await supabase
@@ -30,18 +61,18 @@ export default function EventFeedPage() {
         .order("event_date", { ascending: true });
 
       if (!error && data) {
-        setEvents(
-          data.map((e) => ({
-            ...e,
-            lowestPrice: Math.min(...(e.event_tiers?.map((t) => t.price) ?? [0])),
-            bulkDiscounts: e.bulk_discounts,
-          }))
-        );
+        const mapped = data.map((e) => ({
+          ...e,
+          lowestPrice: Math.min(...(e.event_tiers?.map((t) => t.price) ?? [0])),
+          bulkDiscounts: e.bulk_discounts,
+        }));
+        setEvents(mapped);
+        writeCache(mapped);
       }
       setLoading(false);
     }
     load();
-  }, []);
+  }, [cached]);
 
   const filtered = useMemo(() => {
     return events.filter((e) => {

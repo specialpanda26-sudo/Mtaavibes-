@@ -9,7 +9,7 @@ import LoadingRing from "./LoadingRing";
 // Shows once per browser session (sessionStorage), not on every navigation,
 // since layout.js only mounts this once per hard load anyway.
 const BOOT_KEY = "mtaavibes-booted";
-const HOLD_MS = 1900;
+const HOLD_MS = 4300;
 const EXIT_MS = 650;
 
 export default function AppBootSplash() {

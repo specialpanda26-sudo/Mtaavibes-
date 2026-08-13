@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import TabBar from "@/components/TabBar";
 import GlassCard from "@/components/GlassCard";
 import ReferralCard from "@/components/ReferralCard";
+import DeleteTicketButton from "@/components/DeleteTicketButton";
 
 const TABS = [
   { value: "upcoming", label: "Upcoming" },
@@ -22,11 +23,48 @@ function useBuyerPhone() {
   return phone;
 }
 
+// Same problem as the events feed: this route fully unmounts when you tap
+// away to another tab, so without a cache the "No tickets yet" empty state
+// flashes for a moment on every return visit, right before the real
+// tickets pop back in. Cache per-phone in sessionStorage so a return visit
+// shows what we already know instantly, then quietly refreshes.
+function cacheKey(phone) {
+  return `mtaavibes:ticketsCache:${phone}`;
+}
+function readTicketsCache(phone) {
+  if (typeof window === "undefined" || !phone) return null;
+  try {
+    const raw = sessionStorage.getItem(cacheKey(phone));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+function writeTicketsCache(phone, tickets) {
+  if (typeof window === "undefined" || !phone) return;
+  try {
+    sessionStorage.setItem(cacheKey(phone), JSON.stringify(tickets));
+  } catch {
+    // non-fatal
+  }
+}
+
 export default function MyTicketsPage() {
   const phone = useBuyerPhone();
   const [tab, setTab] = useState("upcoming");
   const [tickets, setTickets] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [referral, setReferral] = useState(null);
+
+  // Once we know the phone, hydrate instantly from cache if we have it.
+  useEffect(() => {
+    if (!phone) return;
+    const cached = readTicketsCache(phone);
+    if (cached) {
+      setTickets(cached);
+      setLoaded(true);
+    }
+  }, [phone]);
 
   useEffect(() => {
     if (!phone) return;
@@ -38,6 +76,8 @@ export default function MyTicketsPage() {
         .eq("buyer_phone", phone)
         .order("paid_at", { ascending: false });
       setTickets(data ?? []);
+      writeTicketsCache(phone, data ?? []);
+      setLoaded(true);
 
       // Points balance = sum(earn) - sum(redeem) from points_ledger
       const { data: ledger } = await supabase
@@ -82,6 +122,14 @@ export default function MyTicketsPage() {
     });
   }, [tickets, tab]);
 
+  function handleTicketDeleted(ticketId) {
+    setTickets((prev) => {
+      const next = prev.filter((t) => t.id !== ticketId);
+      writeTicketsCache(phone, next);
+      return next;
+    });
+  }
+
   if (!phone) {
     return (
       <main className="px-4 pt-10 text-center">
@@ -115,7 +163,7 @@ export default function MyTicketsPage() {
         <TabBar tabs={TABS} activeTab={tab} onChange={setTab} />
       </div>
 
-      {filtered.length === 0 && (
+      {loaded && filtered.length === 0 && (
         <div className="text-center py-10">
           <p className="text-[14px] text-secondary mb-4">No tickets yet</p>
           <Link
@@ -146,6 +194,7 @@ export default function MyTicketsPage() {
               >
                 {ticket.status === "used" ? "Used" : "Paid"}
               </span>
+              <DeleteTicketButton ticketId={ticket.id} onDeleted={handleTicketDeleted} variant="row" />
             </GlassCard>
           </Link>
         ))}
