@@ -5,12 +5,10 @@ import { supabase } from "@/lib/supabase";
 import GlassCard from "@/components/GlassCard";
 import CreateEventForm from "@/components/CreateEventForm";
 import GuestListModal from "@/components/GuestListModal";
-import IdVerificationForm from "@/components/IdVerificationForm";
 import SignOutButton from "@/components/SignOutButton";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
-  const [verification, setVerification] = useState(null);
   const [events, setEvents] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [guestListEventId, setGuestListEventId] = useState(null);
@@ -20,13 +18,6 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       if (!user) return;
-
-      const { data: v } = await supabase
-        .from("organizer_verifications")
-        .select("*")
-        .eq("organizer_id", user.id)
-        .maybeSingle();
-      setVerification(v);
 
       const { data: ev } = await supabase
         .from("events")
@@ -49,8 +40,6 @@ export default function DashboardPage() {
     );
   }
 
-  const isVerified = verification?.status === "approved";
-
   const totals = events.reduce(
     (acc, e) => {
       acc.eventsCount += 1;
@@ -72,24 +61,6 @@ export default function DashboardPage() {
         </div>
         <SignOutButton />
       </div>
-
-      {!isVerified && (
-        <GlassCard className="p-5 mb-6">
-          <p className="text-[14px] font-medium mb-1">Verify your account to start selling tickets</p>
-          <p className="text-[12px] text-tertiary mb-4">
-            Upload the front and back of your national ID. Files are stored privately in
-            Supabase Storage and only visible to you and the review team.
-          </p>
-          <span className="rounded-chip bg-black/5 px-3 py-1 text-[11px] font-medium text-secondary mb-4 inline-block">
-            {verification?.status ?? "Not started"}
-          </span>
-          <IdVerificationForm
-            organizerId={user.id}
-            verification={verification}
-            onSubmitted={(row) => setVerification(row)}
-          />
-        </GlassCard>
-      )}
 
       <div className="grid grid-cols-3 gap-3 mb-6">
         <GlassCard className="p-4">
