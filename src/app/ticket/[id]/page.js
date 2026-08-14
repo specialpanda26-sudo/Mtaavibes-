@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import TicketQR from "@/components/TicketQR";
 import FlipCountdown from "@/components/FlipCountdown";
 import ConfettiBurst from "@/components/ConfettiBurst";
@@ -16,11 +15,15 @@ export default function TicketPage({ params }) {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from("tickets")
-        .select("*, event:events(title, venue, event_date), tier:event_tiers(tier_name)")
-        .eq("id", params.id)
-        .single();
+      // Fetched through /api/ticket/[id] (service role) rather than the
+      // direct client query this used to run — now that tickets has RLS
+      // enabled, a buyer landing here straight from checkout (before
+      // doing any phone verification) has no session yet, so a client-side
+      // anon-key query would correctly be denied. See that route for the
+      // reasoning on why a service-role lookup by unguessable UUID is fine
+      // here even though bulk client access to `tickets` is not.
+      const res = await fetch(`/api/ticket/${params.id}`);
+      const data = res.ok ? await res.json() : null;
 
       if (data) {
         setTicket({ ...data, tier_name: data.tier?.tier_name });

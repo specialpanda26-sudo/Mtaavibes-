@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
       const { data: ev } = await supabase
         .from("events")
-        .select("*, tickets(amount_paid, commission_paid, organizer_paid)")
+        .select("*, tickets(quantity, amount_paid, commission_paid, organizer_paid)")
         .eq("organizer_id", user.id)
         .order("created_at", { ascending: false });
       setEvents(ev ?? []);
@@ -43,7 +43,11 @@ export default function DashboardPage() {
   const totals = events.reduce(
     (acc, e) => {
       acc.eventsCount += 1;
-      const sold = e.tickets?.reduce((s, t) => s + 1, 0) ?? 0;
+      // Bug fix: each `tickets` row can represent more than one admission
+      // (PurchaseSheet lets a buyer select quantity > 1 in a single
+      // checkout), so counting *rows* undercounted actual tickets sold
+      // whenever anyone bought more than one at a time. Sum `quantity`.
+      const sold = e.tickets?.reduce((s, t) => s + (t.quantity ?? 1), 0) ?? 0;
       const earnings = e.tickets?.reduce((s, t) => s + (t.organizer_paid ?? 0), 0) ?? 0;
       acc.ticketsSold += sold;
       acc.earnings += earnings;
@@ -87,7 +91,7 @@ export default function DashboardPage() {
       <p className="text-[14px] font-medium mb-3">My events</p>
       <div className="flex flex-col gap-3">
         {events.map((e) => {
-          const sold = e.tickets?.length ?? 0;
+          const sold = e.tickets?.reduce((s, t) => s + (t.quantity ?? 1), 0) ?? 0;
           const revenue = e.tickets?.reduce((s, t) => s + t.amount_paid, 0) ?? 0;
           const commission = e.tickets?.reduce((s, t) => s + t.commission_paid, 0) ?? 0;
           const net = revenue - commission;

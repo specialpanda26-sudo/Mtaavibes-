@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { pointsToKsh } from "@/lib/constants";
+import { pointsToKsh, normalizeKenyanPhone } from "@/lib/constants";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 const VALID_METHODS = ["M-PESA", "CARD-PAYMENT", "BANK-PAYMENT"];
@@ -39,11 +39,27 @@ export async function POST(req) {
     pointsRedeemed,
   } = await req.json();
 
+  const qty = Number(quantity) || 1;
+
   if (!amount || !eventId || !tierId || !VALID_METHODS.includes(method)) {
     return NextResponse.json({ error: "Missing or invalid required fields" }, { status: 400 });
   }
-  if (method === "M-PESA" && !phoneNumber) {
-    return NextResponse.json({ error: "Phone number is required for M-Pesa" }, { status: 400 });
+  if (!Number.isInteger(qty) || qty < 1 || qty > 20) {
+    return NextResponse.json({ error: "Invalid ticket quantity" }, { status: 400 });
+  }
+
+  // Bug fix: nothing here validated the phone number shape before sending
+  // it to IntaSend, so a mistyped number would silently fail the STK push
+  // (or worse, look "sent" while going nowhere). Also normalizes to a
+  // single canonical format so a ticket bought as "0712 345 678" is found
+  // later by a buyer who verifies as "+254712345678" on My Tickets.
+  const normalizedPhone = method === "M-PESA" ? normalizeKenyanPhone(phoneNumber) : null;
+
+  if (method === "M-PESA" && !normalizedPhone) {
+    return NextResponse.json(
+      { error: "Enter a valid Safaricom/Airtel number, e.g. 0712 345 678" },
+      { status: 400 }
+    );
   }
   if (method !== "M-PESA" && !email) {
     return NextResponse.json({ error: "Email is required for card/bank payment" }, { status: 400 });
@@ -71,7 +87,7 @@ export async function POST(req) {
         body: JSON.stringify({
           public_key: process.env.INTASEND_PUBLISHABLE_KEY,
           amount: finalAmount,
-          phone_number: phoneNumber,
+          phone_number: normalizedPhone,
           currency: "KES",
           api_ref: apiRef,
           method: "M-PESA",
@@ -131,8 +147,8 @@ export async function POST(req) {
     invoice_id: invoiceId,
     event_id: eventId,
     tier_id: tierId,
-    quantity,
-    buyer_phone: phoneNumber || email, // buyer_phone doubles as a buyer identifier for card/bank
+    quantity: qty,
+    buyer_phone: normalizedPhone || email, // buyer_phone doubles as a buyer identifier for card/bank
     amount_paid: finalAmount,
     referral_code: referralCode ?? null,
     points_redeemed: pointsRedeemed ?? 0,

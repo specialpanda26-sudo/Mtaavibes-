@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import PasswordStrength, { computeEntropy } from "@/components/PasswordStrength";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -13,6 +14,13 @@ export default function SignupPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    // Organizer accounts hold M-Pesa payout details, so we hold this to a
+    // slightly higher bar than Supabase's own 6-character default —
+    // "padlock" tier (40 bits) or better.
+    if (computeEntropy(password) < 40) {
+      setError("Choose a stronger password — mix upper/lowercase, numbers, and a symbol.");
+      return;
+    }
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) {
       setError(error.message);
@@ -49,8 +57,9 @@ export default function SignupPage() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full glass rounded-2xl px-4 py-3 text-[14px] mb-4 outline-none"
+          className="w-full glass rounded-2xl px-4 py-3 text-[14px] mb-2 outline-none"
         />
+        <PasswordStrength password={password} />
 
         {error && <p className="text-[12px] text-accentRed mb-3">{error}</p>}
 

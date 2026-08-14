@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
+import { timingSafeEqual, randomUUID } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase";
 import { COMMISSION_RATE, REFERRAL_POINTS_PER_SIGNUP } from "@/lib/constants";
 
@@ -64,7 +64,10 @@ export async function POST(req) {
   const amountPaid = pending.amount_paid;
   const commissionPaid = Math.round(amountPaid * COMMISSION_RATE);
   const organizerPaid = amountPaid - commissionPaid;
-  const qrCode = crypto.randomUUID();
+  // Was `crypto.randomUUID()` relying on an unimported global — works on
+  // newer Node runtimes but not guaranteed everywhere Render might run
+  // this. Import explicitly instead of hoping the platform polyfills it.
+  const qrCode = randomUUID();
 
   const { data: ticket } = await db
     .from("tickets")

@@ -7,6 +7,8 @@ import TabBar from "@/components/TabBar";
 import GlassCard from "@/components/GlassCard";
 import ReferralCard from "@/components/ReferralCard";
 import DeleteTicketButton from "@/components/DeleteTicketButton";
+import PhoneVerify from "@/components/PhoneVerify";
+import { normalizeKenyanPhone } from "@/lib/constants";
 
 const TABS = [
   { value: "upcoming", label: "Upcoming" },
@@ -14,13 +16,43 @@ const TABS = [
   { value: "all", label: "All" },
 ];
 
-// TODO: replace with real phone-based session lookup (OTP or saved session per PAGE H)
+// Real fix for the old "TODO: replace with real phone-based session
+// lookup" — this reads Supabase's actual auth session (set by PhoneVerify
+// via signInWithOtp/verifyOtp) instead of a bare unguarded localStorage
+// value anyone could type into devtools to view someone else's tickets.
+// We still fall back to a cached localStorage phone on first paint so the
+// page doesn't flash the verification screen for a returning buyer whose
+// Supabase session cookie just hasn't rehydrated yet.
 function useBuyerPhone() {
   const [phone, setPhone] = useState(null);
+  const [checked, setChecked] = useState(false);
+
   useEffect(() => {
-    setPhone(typeof window !== "undefined" ? localStorage.getItem("buyerPhone") : null);
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      const sessionPhone = data?.session?.user?.phone;
+      if (sessionPhone) {
+        setPhone(normalizeKenyanPhone(sessionPhone));
+      } else if (typeof window !== "undefined") {
+        setPhone(localStorage.getItem("buyerPhone"));
+      }
+      setChecked(true);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const sessionPhone = session?.user?.phone;
+      setPhone(sessionPhone ? normalizeKenyanPhone(sessionPhone) : null);
+    });
+
+    return () => {
+      mounted = false;
+      sub?.subscription?.unsubscribe();
+    };
   }, []);
-  return phone;
+
+  return { phone, checked };
 }
 
 // Same problem as the events feed: this route fully unmounts when you tap
@@ -50,7 +82,7 @@ function writeTicketsCache(phone, tickets) {
 }
 
 export default function MyTicketsPage() {
-  const phone = useBuyerPhone();
+  const { phone, checked } = useBuyerPhone();
   const [tab, setTab] = useState("upcoming");
   const [tickets, setTickets] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -70,6 +102,12 @@ export default function MyTicketsPage() {
     if (!phone) return;
 
     async function load() {
+      // buyer_phone is always stored in the canonical "254…" form as of
+      // the normalizeKenyanPhone() fix. The RLS policy in
+      // 003_row_level_security.sql only authorizes reads that match your
+      // *verified* auth phone in that same form, so there's no benefit to
+      // also querying legacy "0…" variants here — RLS would filter them
+      // out anyway.
       const { data } = await supabase
         .from("tickets")
         .select("*, event:events(title, poster_url, event_date, venue)")
@@ -130,19 +168,21 @@ export default function MyTicketsPage() {
     });
   }
 
+  if (!checked) {
+    return <main className="px-4 pt-10 text-center text-[13px] text-tertiary">Loading…</main>;
+  }
+
   if (!phone) {
     return (
-      <main className="px-4 pt-10 text-center">
-        <p className="text-[14px] text-secondary mb-4">
-          Enter the phone number you used at checkout to see your tickets.
-        </p>
-        {/* TODO: wire to real OTP flow from PAGE H instead of a bare input */}
+      <main className="px-4 pt-10">
+        <PhoneVerify onVerified={() => window.location.reload()} />
       </main>
     );
   }
 
-  function handleSwitchNumber() {
+  async function handleSwitchNumber() {
     if (typeof window === "undefined") return;
+    await supabase.auth.signOut();
     localStorage.removeItem("buyerPhone");
     window.location.reload();
   }

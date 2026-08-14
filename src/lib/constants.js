@@ -70,4 +70,37 @@ export const CATEGORIES = [
 
 // Regex used to block phone numbers being pasted into event descriptions
 // (buyers must pay through Mtaa Vibes, not a side M-Pesa number).
-export const KENYAN_PHONE_REGEX = /(\+?254|0)?[71]\d{8}/g;
+// NOTE: no /g flag — a global regex is stateful (.lastIndex persists on the
+// const between calls), so a second form submission in the same session
+// could silently skip a phone number that WOULD have matched fresh. We only
+// ever call .test() once per submit, so global matching buys us nothing.
+export const KENYAN_PHONE_REGEX = /(\+?254|0)?[71]\d{8}/;
+
+// Normalizes any of the common Kenyan phone formats a user might type
+// (07XX XXX XXX, 7XX XXX XXX, 2547XXXXXXXX, +254 7XX XXX XXX) into a single
+// canonical E.164 form: "254XXXXXXXXX". Returns null if it doesn't look
+// like a valid Safaricom/Airtel/Telkom number. Used everywhere a phone
+// number is stored or compared (checkout, Supabase phone auth, tickets
+// lookup) so the same buyer always matches the same row regardless of how
+// they happened to type their number.
+export function normalizeKenyanPhone(input) {
+  if (!input) return null;
+  const digits = String(input).replace(/\D/g, "");
+  let national;
+  if (digits.startsWith("254") && digits.length === 12) {
+    national = digits.slice(3);
+  } else if (digits.startsWith("0") && digits.length === 10) {
+    national = digits.slice(1);
+  } else if (digits.length === 9) {
+    national = digits;
+  } else {
+    return null;
+  }
+  if (!/^[71]\d{8}$/.test(national)) return null;
+  return `254${national}`;
+}
+
+// Supabase phone auth (and most SMS APIs) want E.164 with a leading "+".
+export function toE164(normalized) {
+  return normalized ? `+${normalized}` : null;
+}

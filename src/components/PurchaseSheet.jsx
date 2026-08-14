@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PaymentButton from "./PaymentButton";
 import Portal from "./Portal";
 import TierBadge from "./TierBadge";
+import { pointsToKsh } from "@/lib/constants";
 
 const METHODS = [
   { value: "M-PESA", label: "M-Pesa" },
@@ -11,16 +12,29 @@ const METHODS = [
   { value: "BANK-PAYMENT", label: "Bank" },
 ];
 
-export default function PurchaseSheet({ event, onClose, onSubmit }) {
+// Bug fix: the events feed was passing `pointsBalance` and `referralCode`
+// props to this component, but PurchaseSheet never declared or read
+// either one — so points could never be redeemed at checkout, and a
+// referral link's `?ref=` code never actually made it into the payment
+// payload. That silently broke the entire referral/points feature
+// end-to-end even though the backend (webhook) fully supports it.
+export default function PurchaseSheet({ event, onClose, onSubmit, pointsBalance = 0, referralCode = null }) {
   const [tierId, setTierId] = useState(event.tiers?.[0]?.id);
   const [quantity, setQuantity] = useState(1);
   const [method, setMethod] = useState("M-PESA");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [redeemPoints, setRedeemPoints] = useState(false);
 
   const tier = event.tiers.find((t) => t.id === tierId) ?? event.tiers[0];
   const subtotal = (tier?.price ?? 0) * quantity;
-  const total = subtotal;
+  // Never let a points redemption take the total below KSh 1 (stkpush
+  // clamps this server-side too, but mirroring it here keeps the number
+  // shown to the buyer honest).
+  const maxRedeemablePoints = Math.min(pointsBalance, (subtotal - 1) * 2);
+  const pointsRedeemed = redeemPoints ? maxRedeemablePoints : 0;
+  const discount = pointsToKsh(pointsRedeemed);
+  const total = Math.max(subtotal - discount, subtotal > 0 ? 1 : 0);
   const canPay = method === "M-PESA" ? !!phone : !!email;
 
   async function handlePay() {
@@ -28,10 +42,12 @@ export default function PurchaseSheet({ event, onClose, onSubmit }) {
       eventId: event.id,
       tierId,
       quantity,
-      amount: total,
+      amount: subtotal,
       method,
       phoneNumber: phone || undefined,
       email: email || undefined,
+      referralCode: referralCode || undefined,
+      pointsRedeemed: pointsRedeemed || undefined,
     });
     if (result?.redirectUrl) {
       // Card / Bank — IntaSend's hosted checkout, then back to /pay/complete.
@@ -215,6 +231,47 @@ export default function PurchaseSheet({ event, onClose, onSubmit }) {
               />
             )}
           </motion.div>
+
+          {pointsBalance > 0 && maxRedeemablePoints > 0 && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.58 }}
+              onClick={() => setRedeemPoints((v) => !v)}
+              className={[
+                "w-full flex items-center justify-between rounded-2xl px-4 py-3 mb-4 text-left transition-colors",
+                redeemPoints ? "bg-gold/15 border border-gold/40" : "glass border border-white/60",
+              ].join(" ")}
+            >
+              <span className="text-[13px] font-medium">
+                Use {maxRedeemablePoints} pts (−KSh {pointsToKsh(maxRedeemablePoints)})
+              </span>
+              <span
+                className={[
+                  "h-5 w-9 rounded-full transition-colors relative",
+                  redeemPoints ? "bg-ink" : "bg-black/15",
+                ].join(" ")}
+              >
+                <motion.span
+                  className="absolute top-0.5 h-4 w-4 rounded-full bg-white"
+                  animate={{ left: redeemPoints ? "18px" : "2px" }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              </span>
+            </motion.button>
+          )}
+
+          {referralCode && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="text-[11px] text-secondary mb-4"
+            >
+              Referral code <span className="font-mono">{referralCode}</span> applied — your friend earns points once this ticket is paid.
+            </motion.p>
+          )}
 
           <motion.div
             initial={{ opacity: 0, y: 10 }}

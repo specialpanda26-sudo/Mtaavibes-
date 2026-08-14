@@ -1,21 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function ScanPage() {
+  const [user, setUser] = useState(undefined); // undefined = still checking, null = signed out
   const [code, setCode] = useState("");
-  const [result, setResult] = useState(null); // { state: 'invalid'|'valid'|'used'|'pending', ticket? }
+  const [result, setResult] = useState(null); // { state: 'invalid'|'valid'|'used'|'pending'|'forbidden', ticket? }
+
+  // Security fix: this page had NO auth check at all — anyone with the
+  // URL could scan (and permanently burn) any ticket for any event, for
+  // any organizer, with zero login. Gate it behind the same Supabase
+  // organizer session the dashboard already requires.
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
+  }, []);
 
   async function handleValidate() {
     const { data: ticket } = await supabase
       .from("tickets")
-      .select("*, event:events(title), tier:event_tiers(tier_name)")
+      .select("*, event:events(title, organizer_id), tier:event_tiers(tier_name)")
       .eq("qr_code", code)
       .single();
 
     if (!ticket) {
       setResult({ state: "invalid" });
+      return;
+    }
+
+    // Belt-and-suspenders: even with RLS restricting the update below to
+    // the organizer's own events, check here too so we can show a clear
+    // "not your event" message instead of a silent failed update.
+    if (ticket.event?.organizer_id !== user.id) {
+      setResult({ state: "forbidden" });
       return;
     }
 
@@ -36,6 +53,21 @@ export default function ScanPage() {
       .eq("id", ticket.id);
 
     setResult({ state: "valid", ticket });
+  }
+
+  if (user === undefined) {
+    return <main className="px-4 pt-10 text-center text-[13px] text-tertiary">Loading…</main>;
+  }
+
+  if (!user) {
+    return (
+      <main className="px-4 pt-10 text-center">
+        <p className="text-[14px] text-secondary mb-4">Sign in as an organizer to scan tickets.</p>
+        <a href="/login" className="inline-block rounded-button bg-ink px-5 py-3 text-[14px] font-medium text-white">
+          Sign in
+        </a>
+      </main>
+    );
   }
 
   return (
@@ -79,6 +111,12 @@ export default function ScanPage() {
       {result?.state === "pending" && (
         <div className="text-center text-secondary">
           <p className="text-[24px] font-medium">Payment pending</p>
+        </div>
+      )}
+      {result?.state === "forbidden" && (
+        <div className="text-center text-accentRed">
+          <p className="text-[24px] font-medium">✕ Not your event</p>
+          <p className="text-[13px] text-secondary mt-2">This ticket belongs to a different organizer's event.</p>
         </div>
       )}
     </main>
